@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script>
+      const getBlogposts = async () => {
+        let blogposts = await fetch("http://127.0.0.1:8080/api/blogposts", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            showData(data.blogposts);
+            console.log(data.blogposts);
+          });
+      };
+
+      getBlogposts();
+
+      const submitBlogpost = async () => {
+        let mainField = document.getElementById("main");
+        let usernameField = document.getElementById("username");
+        let imageField = document.getElementById("image");
+        let avatarField = document.getElementById("avatar");
+
+        let main = mainField.value;
+        let username = usernameField.value;
+        let avatar = avatarField.value;
+        let image =
+          imageField.files[0] === undefined ? "" : imageField.files[0];
+
+        if (image) uploadImage(image);
+
+        mainField.value = "";
+        usernameField.value = "";
+        avatarField.value = "";
+        imageField.value = "";
+
+        let data = {
+          main: main,
+          username: username,
+          image: image ? image.name : "",
+          avatar: avatar,
+        };
+
+        console.log(data);
+
+        let response = await fetch("http://127.0.0.1:8080/api/blogposts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+          });
+      };
+
+      const uploadImage = async (image) => {
+        const formData = new FormData();
+        formData.append("image", image);
+        console.log(formData);
+        let response = await fetch("http://127.0.0.1:8000/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+          });
+      };
+
+      const showData = (data) => {
+        feed.innerHTML = "";
+        data.forEach((blogpost, id) => {
+          const post = document.createElement("div");
+          post.classList.add("blogpost");
+          let avatarStr, imageStr = "";
+
+          if (blogpost.avatar !== "")
+            avatarStr = `<img src='${blogpost.avatar}' class='avatar' alt='avatar' />`;
+          else
+            avatarStr = "";
+
+          if (blogpost.image !== "")
+            imageStr = `<img src='./public/${blogpost.image}' class='image' alt='Image' />`;
+          else
+            imageStr = "";
+
+          post.innerHTML = `
+          <div class="username-img">
+          ${avatarStr}<h3>${blogpost.username}</h3>
+              </div>
+            ${blogpost.main}
+            ${imageStr}
+          `;
+
+          if (id % 2 === 0) {
+            const row = document.createElement("div");
+            row.classList.add("grid-row");
+            row.appendChild(post);
+            feed.appendChild(row);
+          } else {
+            const row = document.getElementsByClassName("grid-row")[0];
+            row.appendChild(post);
+            if(row.childElementCount >= 2){
+              row.classList.remove("grid-row");
+              row.classList.add("grid-row-r")
+            }
+          }
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <div class="screen">
+      <div class="form">
+        <h1>New post:</h1>
+        <br />
+        <div>Title</div>
+        <input id="main" type="text" /><br />
+        <div>Username</div>
+        <input id="username" type="text" /><br />
+        <div>Image (PNG)</div>
+        <input type="file" id="image" accept="image/png" /><br />
+        <div>Avatar link</div>
+        <input id="avatar" type="text" /><br />
+        <button onclick="submitBlogpost()" class="submit-btn">Submit</button>
+      </div>
+      <div class="feed-con">
+        <h1>Feed</h1>
+        <div id="feed"></div>
+      </div>
+    </div>
+  </body>
+</html>
